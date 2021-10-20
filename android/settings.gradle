@@ -1,0 +1,2 @@
+rootProject.name = "Threshold key bridge test"
+include ':app'
