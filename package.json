@@ -1,0 +1,41 @@
+{
+  "name": "tkeybridge",
+  "version": "1.0.0",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "@tkey/core": "^4.4.0",
+    "@tkey/service-provider-torus": "^4.4.0",
+    "@tkey/storage-layer-torus": "^4.4.0",
+    "@types/bn.js": "^5.1.0",
+    "eccrypto": "^1.1.6",
+    "whatwg-fetch": "^3.6.2"
+  },
+  "scripts": {
+    "build": "webpack",
+    "serve": "webpack serve"
+  },
+  "devDependencies": {
+    "assert": "^2.0.0",
+    "bn.js": "^5.1.0",
+    "buffer": "^6.0.3",
+    "crypto-browserify": "^3.12.0",
+    "dotenv-webpack": "^7.0.3",
+    "html-loader": "^2.1.2",
+    "http": "^0.0.1-security",
+    "https": "^1.0.0",
+    "https-browserify": "^1.0.0",
+    "os-browserify": "^0.3.0",
+    "path-browserify": "^1.0.1",
+    "process": "^0.11.10",
+    "stream": "^0.0.2",
+    "stream-browserify": "^3.0.0",
+    "stream-http": "^3.2.0",
+    "ts-loader": "^8.2.0",
+    "typescript": "^4.4.4",
+    "url": "^0.11.0",
+    "webpack": "4.44.2",
+    "webpack-cli": "^4.9.1",
+    "webpack-dev-server": "^4.3.1"
+  }
+}
