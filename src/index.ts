@@ -11,9 +11,6 @@ import ServiceProviderBase from "@tkey/service-provider-base"
 2. save provider share to torus network
 3. reconstruct key
  */
-const LOGIN_TYPE_GOOGLE = 'GOOGLE';
-const LOGIN_TYPE_APPLE = 'APPLE';
-const LOGIN_TYPE_FACEBOOK = 'FACEBOOK';
 
 const proxyContractAddress = process.env.PROXY_CONTRACT_ADDR;
 const network = process.env.NETWORK as TORUS_NETWORK_TYPE;
@@ -74,19 +71,25 @@ async function _saveTorusShare(postboxKey: string, providerShare: ShareStore, id
     });
 
     const tkey = new ThresholdKey({serviceProvider, storageLayer});
+    await tkey.initialize({neverInitializeNewKey: true });
+    console.log('after tkey.initialize')
     await tkey.storageLayer.setMetadata({
         input: providerShare,
         serviceProvider
     });
+    console.log('after setmetadata')
     await tkey.addShareDescription(providerShare.share.shareIndex.toString(), JSON.stringify({
         module: 'serviceProvider',
         id
     }));
+    console.log('after addShareDescription')
 }
 
 export function saveTorusShare(postboxKey: string, providerShare: string, id: string) {
-    _saveTorusShare(postboxKey, ShareStore.fromJSON(JSON.parse(providerShare)), id).then(() =>
-        _sendMessageToNative('torusShareSaved', null));
+    _saveTorusShare(postboxKey, ShareStore.fromJSON(JSON.parse(providerShare)), id).then(() => {
+        console.log('after _saveTorusShare.then')
+        _sendMessageToNative('torusShareSaved', null);
+    });
 }
 
 async function _reconstructKeyWithTorusShare(postboxKey: string, anotherShare: ShareStore): Promise<string> {
@@ -117,7 +120,7 @@ export function reconstructKeyWithTorusShare(postboxKey: string, shareJson: stri
     });
 }
 
-function _sendMessageToNative(command: string, params) {
+function _sendMessageToNative(command: string, params?: any) {
     // iOS
     // @ts-ignore
     if (window.webkit?.messageHandlers?.tkeybridge) {
@@ -131,9 +134,13 @@ function _sendMessageToNative(command: string, params) {
     // Android
     // @ts-ignore
     else if (window.tkeybridge) {
-        const paramsJson = JSON.stringify(params);
-        // @ts-ignore
-        window.tkeybridge[command](paramsJson);
+        if (params) {
+            // @ts-ignore
+            window.tkeybridge[command](JSON.stringify(params));
+        } else {
+            // @ts-ignore
+            window.tkeybridge[command]();
+        }
     } else {
         // error
     }
