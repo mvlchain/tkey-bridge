@@ -1,10 +1,10 @@
 import ThresholdKey from "@tkey/core";
-import TorusServiceProvider from "@tkey/service-provider-torus";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
 import BN from "bn.js"
 import {ShareStore} from "@tkey/common-types";
 import {TORUS_NETWORK_TYPE} from "@toruslabs/torus-direct-web-sdk";
 import path from "path";
+import ServiceProviderBase from "@tkey/service-provider-base"
 
 /*
 1. split given key
@@ -15,8 +15,6 @@ const LOGIN_TYPE_GOOGLE = 'GOOGLE';
 const LOGIN_TYPE_APPLE = 'APPLE';
 const LOGIN_TYPE_FACEBOOK = 'FACEBOOK';
 
-const postboxKey = process.env.POSTBOX_KEY;
-
 const proxyContractAddress = process.env.PROXY_CONTRACT_ADDR;
 const network = process.env.NETWORK as TORUS_NETWORK_TYPE;
 
@@ -24,28 +22,16 @@ const directWebBaseUrl = location.origin + path.join(path.dirname(location.pathn
 console.log("proxyContractAddress", proxyContractAddress)
 console.log("network", network)
 console.log("directWebBaseUrl", directWebBaseUrl);
-const serviceProvider = new TorusServiceProvider({
-    postboxKey: postboxKey,
-    directParams: {
-        baseUrl: directWebBaseUrl,
-        proxyContractAddress,
-        network,
+
+async function _splitKey(postboxKey: string, privateKey: BN) {
+    const serviceProvider = new ServiceProviderBase({postboxKey});
+    const storageLayer = new TorusStorageLayer({
+        hostUrl: "https://metadata.tor.us",
+        serviceProvider,
         enableLogging: true
-    },
-    enableLogging: true
-});
-const storageLayer = new TorusStorageLayer({
-    hostUrl: "https://metadata.tor.us",
-    serviceProvider,
-    enableLogging: true
-});
+    });
 
-const splitKeyFromStr = (pkeyString) => _splitKey(new BN(pkeyString, 16))
-
-async function _splitKey(privateKey: BN) {
     const tkey = new ThresholdKey({serviceProvider, storageLayer, enableLogging: true});
-    // @ts-ignore
-    await tkey.serviceProvider.init({skipSw: false, skipPrefetch: false});
     await tkey._initializeNewKey({
         importedKey: privateKey,
         initializeModules: true
@@ -74,15 +60,20 @@ async function _splitKey(privateKey: BN) {
     return {torusShare, deviceShare, serverShare};
 }
 
-export function splitKey(pkeyString) {
-    _splitKey(new BN(pkeyString, 16)).then(({torusShare, deviceShare, serverShare}) => {
+export function splitKey(postboxKey: string, pkeyString: string) {
+    _splitKey(postboxKey, new BN(pkeyString, 16)).then(({torusShare, deviceShare, serverShare}) => {
         _sendMessageToNative('keySplitFinished', {ts: torusShare, ds: deviceShare, ss: serverShare});
     })
 }
-async function _saveTorusShare(providerShare: ShareStore, id: string) {
+async function _saveTorusShare(postboxKey: string, providerShare: ShareStore, id: string) {
+    const serviceProvider = new ServiceProviderBase({postboxKey});
+    const storageLayer = new TorusStorageLayer({
+        hostUrl: "https://metadata.tor.us",
+        serviceProvider,
+        enableLogging: true
+    });
+
     const tkey = new ThresholdKey({serviceProvider, storageLayer});
-    // @ts-ignore
-    await tkey.serviceProvider.init({skipSw: false, skipPrefetch: false});
     await tkey.storageLayer.setMetadata({
         input: providerShare,
         serviceProvider
@@ -93,9 +84,37 @@ async function _saveTorusShare(providerShare: ShareStore, id: string) {
     }));
 }
 
-export function saveTorusShare(providerShare: string, id: string) {
-    _saveTorusShare(ShareStore.fromJSON(JSON.parse(providerShare)), id).then(() =>
+export function saveTorusShare(postboxKey: string, providerShare: string, id: string) {
+    _saveTorusShare(postboxKey, ShareStore.fromJSON(JSON.parse(providerShare)), id).then(() =>
         _sendMessageToNative('torusShareSaved', null));
+}
+
+async function _reconstructKeyWithTorusShare(postboxKey: string, anotherShare: ShareStore): Promise<string> {
+    const serviceProvider = new ServiceProviderBase({postboxKey});
+    const storageLayer = new TorusStorageLayer({
+        hostUrl: "https://metadata.tor.us",
+        serviceProvider,
+        enableLogging: true
+    });
+
+    const tkey = new ThresholdKey({serviceProvider, storageLayer});
+
+    const rawServiceProviderShare = await tkey.storageLayer.getMetadata({
+      serviceProvider: tkey.serviceProvider
+    });
+    console.log('rawServiceProviderShare');
+    console.dir(rawServiceProviderShare);
+    // @ts-ignore
+    await tkey.initialize({withShare: rawServiceProviderShare, neverInitializeNewKey: true });
+    tkey.inputShareStore(anotherShare);
+    const {privKey} = await tkey.reconstructKey();
+    return privKey.toString(16);
+}
+
+export function reconstructKeyWithTorusShare(postboxKey: string, shareJson: string) {
+    _reconstructKeyWithTorusShare(postboxKey, ShareStore.fromJSON(JSON.parse(shareJson))).then((privKey) => {
+        _sendMessageToNative("privateKeyReconstructed", privKey);
+    });
 }
 
 function _sendMessageToNative(command: string, params) {
@@ -122,7 +141,9 @@ function _sendMessageToNative(command: string, params) {
 
 // @ts-ignore
 window.splitKey = splitKey;
-// @ts-ignore
-window.splitKeyFromStr = splitKeyFromStr
+
 // @ts-ignore
 window.saveTorusShare = saveTorusShare;
+
+// @ts-ignore
+window.reconstructKeyWithTorusShare = reconstructKeyWithTorusShare;
