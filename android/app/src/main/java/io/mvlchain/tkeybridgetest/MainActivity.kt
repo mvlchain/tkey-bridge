@@ -2,20 +2,21 @@ package io.mvlchain.tkeybridgetest
 
 import android.annotation.SuppressLint
 import android.content.Context
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.webkit.*
+import androidx.appcompat.app.AppCompatActivity
+import java8.util.function.BiConsumer
+import org.bouncycastle.util.encoders.Hex
 import org.json.JSONObject
-
-class WebAppInterface(private val mContext: Context) {
-    @JavascriptInterface
-    fun keySplitFinished(shareJson: String) {
-        Log.i("tkey", "shareJson = $shareJson")
-        val shares = JSONObject(shareJson)
-    }
-}
+import org.torusresearch.torusdirect.TorusDirectSdk
+import org.torusresearch.torusdirect.types.DirectSdkArgs
+import org.torusresearch.torusdirect.types.LoginType
+import org.torusresearch.torusdirect.types.SubVerifierDetails
+import org.torusresearch.torusdirect.types.TorusNetwork
+import kotlin.random.Random
 
 class MyWebViewClient(private val mContext: Context): WebViewClient() {
     override fun shouldInterceptRequest(view: WebView?, url: String?): WebResourceResponse? {
@@ -29,33 +30,95 @@ class MyWebViewClient(private val mContext: Context): WebViewClient() {
 }
 
 class MainActivity : AppCompatActivity() {
+    private lateinit var torusSdk: TorusDirectSdk
+    private lateinit var postboxKey: String
+    private lateinit var webView: WebView
+    private lateinit var loginId: String
+    private lateinit var dsJson: String
+    private lateinit var ssJson: String
+
+    private val allowedBrowsers = arrayOf(
+        "com.android.chrome",  // Chrome stable
+        "com.google.android.apps.chrome",  // Chrome system
+        "com.android.chrome.beta"
+    )
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val myWebView = findViewById<WebView>(R.id.webview)
-        myWebView.settings.allowContentAccess = true
-        myWebView.settings.allowFileAccess = true
-        myWebView.settings.javaScriptEnabled = true
-        myWebView.settings.domStorageEnabled = true
-        myWebView.settings.useWideViewPort = true
-        myWebView.settings.setAppCacheEnabled(true)
-        myWebView.settings.cacheMode = WebSettings.LOAD_DEFAULT
-        myWebView.settings.allowFileAccessFromFileURLs = true
-        myWebView.settings.allowUniversalAccessFromFileURLs = true
-        myWebView.webViewClient = MyWebViewClient(this)
-        myWebView.webChromeClient = WebChromeClient()
+        webView = findViewById(R.id.webview)
+        webView.settings.allowContentAccess = true
+        webView.settings.allowFileAccess = true
+        webView.settings.javaScriptEnabled = true
+        webView.settings.domStorageEnabled = true
+        webView.settings.useWideViewPort = true
+        webView.settings.setAppCacheEnabled(true)
+        webView.settings.cacheMode = WebSettings.LOAD_DEFAULT
+        webView.settings.allowFileAccessFromFileURLs = true
+        webView.settings.allowUniversalAccessFromFileURLs = true
+        webView.webViewClient = MyWebViewClient(this)
+        webView.webChromeClient = WebChromeClient()
 
-        myWebView.addJavascriptInterface(WebAppInterface(this), "tkeybridge")
-        myWebView.loadUrl("file:///android_asset/index.html")
+        webView.addJavascriptInterface(this, "tkeybridge")
+        webView.loadUrl("file:///android_asset/index.html")
 
-        val privateKey = "3b7830479c10c47fccfcb189240a1cb2ac5a8644eed38cd846479c16826befbc"
-        Handler().postDelayed(Runnable {
-            run() {
+        // direct sdk init
+        val directSdkArgs = DirectSdkArgs("https://scripts.toruswallet.io/redirect.html", TorusNetwork.TESTNET, "torusapp://org.torusresearch.torusdirectandroid/redirect")
+        torusSdk = TorusDirectSdk(directSdkArgs, this)
+
+        val loginResultCf = torusSdk.triggerLogin(SubVerifierDetails(LoginType.GOOGLE, "clutch-google-testnet", "354250895959-dneacv3fol73d6a6lf789mcjo2jjpbms.apps.googleusercontent.com")
+            .setPreferCustomTabs(true)
+            .setAllowedBrowsers(allowedBrowsers))
+
+        // random gen private key
+        val privateKey = Hex.toHexString(Random.Default.nextBytes(32))
+        Log.i(this.javaClass.simpleName, "generated private key = $privateKey")
+
+        loginResultCf.whenComplete { loginResponse, error ->
+            if (error != null) {
+                Log.e(this.javaClass.simpleName, error.message)
+            } else {
+                this.postboxKey = loginResponse.privateKey
+                this.loginId = loginResponse.userInfo.email
                 Log.i("tkey", "try to call splitKey")
-                myWebView.loadUrl("javascript:window.splitKey('$privateKey')")
+                Handler(Looper.getMainLooper()).post {
+                    webView.loadUrl("javascript:window.splitKey('${this.postboxKey}', '$privateKey')")
+                }
+
             }
-        }, 5000) // TODO: do right away after js loaded (how to catch that timing?)
+        }
+    }
+
+    @JavascriptInterface
+    fun keySplitFinished(shareJson: String) {
+        Log.i("tkey", "shareJson = $shareJson")
+        val shares = JSONObject(shareJson)
+
+        // try to save share
+        val torusShare = shares.getJSONObject("ts").toString()
+        ssJson = shares.getJSONObject("ss").toString()
+        dsJson = shares.getJSONObject("ds").toString()
+        Log.i("tkey", "ss = $ssJson")
+        Log.i("tkey", "ds = $dsJson")
+        Handler(Looper.getMainLooper()).post {
+            webView.loadUrl("javascript:window.saveTorusShare('${this.postboxKey}', '$torusShare', '${this.loginId}')")
+        }
+    }
+
+    @JavascriptInterface
+    fun torusShareSaved() {
+        Log.i("tkey", "torus share saved")
+
+        Handler(Looper.getMainLooper()).post {
+            // try to restore share
+            webView.loadUrl("javascript:window.reconstructKeyWithTorusShare('${this.postboxKey}','${this.dsJson}')")
+        }
+    }
+
+    @JavascriptInterface
+    fun privateKeyReconstructed(pkey: String) {
+        Log.i("tkey", "private key restored = ${pkey}")
     }
 }
