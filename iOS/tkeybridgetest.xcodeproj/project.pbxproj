@@ -10,7 +10,6 @@
 		C6B0A7C727264EBD002AAE50 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = C6B0A7C627264EBD002AAE50 /* assets */; };
 		C6B0A7EC2726B45F002AAE50 /* WebViewHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6B0A7EB2726B45F002AAE50 /* WebViewHandler.swift */; };
 		C6B0A7EE2726B472002AAE50 /* JavascriptFunction.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6B0A7ED2726B472002AAE50 /* JavascriptFunction.swift */; };
-		C6B0A7F02726B4A6002AAE50 /* ParametersHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6B0A7EF2726B4A6002AAE50 /* ParametersHandler.swift */; };
 		C6C1F2F4272594D900219F84 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6C1F2F3272594D900219F84 /* AppDelegate.swift */; };
 		C6C1F2F6272594D900219F84 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6C1F2F5272594D900219F84 /* SceneDelegate.swift */; };
 		C6C1F2F8272594D900219F84 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6C1F2F7272594D900219F84 /* ViewController.swift */; };
@@ -26,7 +25,6 @@
 		C6B0A7C627264EBD002AAE50 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = "<group>"; };
 		C6B0A7EB2726B45F002AAE50 /* WebViewHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewHandler.swift; sourceTree = "<group>"; };
 		C6B0A7ED2726B472002AAE50 /* JavascriptFunction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JavascriptFunction.swift; sourceTree = "<group>"; };
-		C6B0A7EF2726B4A6002AAE50 /* ParametersHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParametersHandler.swift; sourceTree = "<group>"; };
 		C6C1F2F0272594D900219F84 /* tkeybridgetest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = tkeybridgetest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6C1F2F3272594D900219F84 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C6C1F2F5272594D900219F84 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -72,7 +70,6 @@
 			children = (
 				C6B0A7EB2726B45F002AAE50 /* WebViewHandler.swift */,
 				C6B0A7ED2726B472002AAE50 /* JavascriptFunction.swift */,
-				C6B0A7EF2726B4A6002AAE50 /* ParametersHandler.swift */,
 			);
 			path = WebViewHandler;
 			sourceTree = "<group>";
@@ -226,7 +223,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C6B0A7F02726B4A6002AAE50 /* ParametersHandler.swift in Sources */,
 				C6B0A7EE2726B472002AAE50 /* JavascriptFunction.swift in Sources */,
 				C6C1F2F8272594D900219F84 /* ViewController.swift in Sources */,
 				C6C1F2F4272594D900219F84 /* AppDelegate.swift in Sources */,

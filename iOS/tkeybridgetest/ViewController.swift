@@ -16,7 +16,6 @@ import CryptoSwift
 final class ViewController: UIViewController {
 
     private let loginButton = UIButton(type: .system)
-    private let testButton = UIButton(type: .system)
 
     lazy var webViewHandler: WebViewHandler = {
         let webViewHandler = WebViewHandler()
@@ -41,6 +40,7 @@ final class ViewController: UIViewController {
 
     private var postboxKey: String?
     private var loginId: String?
+    private var torusShare: String?
     private var dsJson: String?
     private var ssJson: String?
 
@@ -57,18 +57,12 @@ extension ViewController {
 
     private func setUpLayout() {
         view.addSubview(loginButton)
-        view.addSubview(testButton)
         loginButton.translatesAutoresizingMaskIntoConstraints = false
-        testButton.translatesAutoresizingMaskIntoConstraints = false
         let constraints = [
             loginButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loginButton.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             loginButton.widthAnchor.constraint(equalToConstant: 140),
-            loginButton.heightAnchor.constraint(equalToConstant: 44.0),
-            testButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            testButton.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: 66.0),
-            testButton.widthAnchor.constraint(equalToConstant: 140),
-            testButton.heightAnchor.constraint(equalToConstant: 44.0)
+            loginButton.heightAnchor.constraint(equalToConstant: 44.0)
         ]
         NSLayoutConstraint.activate(constraints)
     }
@@ -81,13 +75,6 @@ extension ViewController {
         loginButton.isEnabled = false
         loginButton.addTarget(self, action: #selector(didTapLoginButton), for: .touchUpInside)
 
-        testButton.layer.cornerRadius = 8.0
-        testButton.backgroundColor = .gray
-        testButton.setTitle("callNative01", for: .normal)
-        testButton.setTitleColor(.white, for: .normal)
-        testButton.isEnabled = false
-        testButton.addTarget(self, action: #selector(callNative01), for: .touchUpInside)
-
         if let filePath = Bundle.main.path(forResource: "index", ofType: "html", inDirectory: "assets") {
             let url = URL.init(fileURLWithPath: filePath)
             webViewHandler.loadFileURL(url)
@@ -99,7 +86,7 @@ extension ViewController {
             if let postboxKey = data["privateKey"] as? String {
                 print("private key rebuild", postboxKey)
                 self?.postboxKey = postboxKey
-                self?.splitKey(postboxKey)
+                self?.splitKey()
             }
             if let userInfo = data["userInfo"] as? NSDictionary, let email = userInfo["email"] as? String {
                 print("email", email)
@@ -110,8 +97,25 @@ extension ViewController {
         }
     }
 
-    private func splitKey(_ postboxKey: String) {
+    private func generateRandom() -> String {
+        /** A UUID consists of 16 octets, i.e. 16 groups of 8 bits (16 × 8 = 128), that are represented as 32 hexadecimal digits, displayed in 5 groups, separated by hyphens
+         https://learnappmaking.com/random-unique-identifier-uuid-swift-how-to/#:~:text=A%20UUID%20consists%20of%2016%20octets%2C%20i.e.%2016%20groups%20of%208%20bits%20(16%20%C3%97%208%20%3D%20128)%2C%20that%20are%20represented%20as%2032%20hexadecimal%20digits%2C%20displayed%20in%205%20groups%2C%20separated%20by%20hyphens
+         */
+        let uuidString = UUID().uuidString.replacingOccurrences(of: "-", with: "")
+        return uuidString
+    }
+}
+
+// MARK: Call Javascript
+
+extension ViewController {
+
+    private func splitKey() {
+        guard let postboxKey = postboxKey else {
+            return
+        }
         let privateKey = generateRandom()
+        print("generateRandom", privateKey)
         let javascriptString = "splitKey('\(postboxKey)','\(privateKey)')"
         webViewHandler.callJavascript(javascriptString: javascriptString) { (success, result) in
             if let result = result {
@@ -120,37 +124,88 @@ extension ViewController {
         }
     }
 
-    @objc private func callNative01() {
-        let javascriptTest = "callNative01('nguyen')"
-        webViewHandler.callJavascript(javascriptString: javascriptTest) { (success, result) in
+    private func saveTorusShare() {
+        guard let postboxKey = postboxKey, let torusShare = torusShare, let loginId = loginId else {
+            return
+        }
+        let javascriptString = "saveTorusShare('\(postboxKey)','\(torusShare)','\(loginId)')"
+        webViewHandler.callJavascript(javascriptString: javascriptString) { (success, result) in
             if let result = result {
                 print(result)
             }
         }
     }
 
-    private func generateRandom() -> String {
-        let prefixSize = Int(UInt32())
-        let uuidString = UUID().uuidString.replacingOccurrences(of: "-", with: "")
-        return String(Data(uuidString.utf8)
-                        .base64EncodedString()
-                        .replacingOccurrences(of: "=", with: "")
-                        .prefix(prefixSize))
+    private func reconstructKeyWithTorusShare() {
+        guard let postboxKey = postboxKey, let torusShare = torusShare else {
+            return
+        }
+        let javascriptString = "reconstructKeyWithTorusShare('\(postboxKey)','\(torusShare)')"
+        webViewHandler.callJavascript(javascriptString: javascriptString) { (success, result) in
+            if let result = result {
+                print(result)
+            }
+        }
     }
 }
 
+// MARK: WebViewHandlerDelegate
+
 extension ViewController: WebViewHandlerDelegate {
+
+    enum Command: String {
+        case keySplitFinished, torusShareSaved, privateKeyReconstructed
+    }
 
     func didLoadPage(isLoaded: Bool) {
         loginButton.isEnabled = isLoaded
-        testButton.isEnabled = isLoaded
     }
 
-    func didReceiveMessage(message: Any) {
-        print(message)
-    }
+    func didReceiveDictionary(dict: Dictionary<String, Any>) {
+        guard let command = dict["command"] as? String else {
+            return
+        }
+        switch command {
+        case Command.keySplitFinished.rawValue:
+            print("tkey", "shareJson = \(dict)")
+            guard let params = dict["params"] as? Dictionary<String, Any>,
+                  let ts = params["ts"] as? Dictionary<String, Any>,
+                  let ss = params["ss"]as? Dictionary<String, Any>,
+                  let ds = params["ds"] as? Dictionary<String, Any> else {
+                return
+            }
+            do {
+                torusShare = try ts.toJson()
+                ssJson = try ss.toJson()
+                dsJson = try ds.toJson()
+                saveTorusShare()
+            } catch {
+                print(error)
+            }
 
-    func didReceiveParameters(parameters: [String : Any]) {
-        print(parameters)
+        case Command.torusShareSaved.rawValue:
+            print("tkey", "torus share saved")
+            reconstructKeyWithTorusShare()
+        case Command.privateKeyReconstructed.rawValue:
+            print("tkey", "private key restored = \(dict)")
+        default:
+            print("This commnand doesn't handle yet.", command)
+        }
+    }
+}
+
+// MARK: Convert Dictionary to json
+
+extension Dictionary {
+
+    /// Convert Dictionary to JSON string
+    /// - Throws: exception if dictionary cannot be converted to JSON data or when data cannot be converted to UTF8 string
+    /// - Returns: JSON string
+    func toJson() throws -> String {
+        let data = try JSONSerialization.data(withJSONObject: self)
+        if let string = String(data: data, encoding: .utf8) {
+            return string
+        }
+        throw NSError(domain: "Dictionary", code: 1, userInfo: ["message": "Data cannot be converted to .utf8 string"])
     }
 }

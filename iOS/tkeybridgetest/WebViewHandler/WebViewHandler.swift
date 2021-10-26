@@ -10,15 +10,13 @@ import WebKit
 
 protocol WebViewHandlerDelegate: AnyObject {
     func didLoadPage(isLoaded: Bool)
-    func didReceiveMessage(message: Any)
-    func didReceiveParameters(parameters:[String: Any])
+    func didReceiveDictionary(dict: Dictionary<String, Any>)
 }
 
 final class WebViewHandler: NSObject {
 
+    let scriptName = "tkeybridge"
     var webView: WKWebView!
-//    let tkeybridge = "tkeybridge"
-    let tkeybridge = "sendNative01"
     weak var delegate: WebViewHandlerDelegate?
 
     private var pageLoaded = false
@@ -30,7 +28,7 @@ final class WebViewHandler: NSObject {
         preferences.javaScriptEnabled = true
         let configuration = WKWebViewConfiguration()
         configuration.preferences = preferences
-        configuration.userContentController.add(self, name: tkeybridge)
+        configuration.userContentController.add(self, name: scriptName)
         webView = WKWebView(frame: CGRect.zero, configuration: configuration)
         webView.navigationDelegate = self
     }
@@ -47,25 +45,9 @@ final class WebViewHandler: NSObject {
         }
     }
 
-    func load(_ request: URLRequest) {
-        pageLoaded = false
-        webView.load(request)
-    }
-
     func loadFileURL(_ url: URL) {
         pageLoaded = false
         webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
-    }
-
-    func loadHTMLString(_ path: String) {
-        do {
-            let html = try String(contentsOfFile: path, encoding: .utf8)
-            let baseUrl = URL(fileURLWithPath: path)
-            webView.loadHTMLString(html, baseURL: baseUrl)
-            pageLoaded = false
-        } catch {
-            debugPrint("Load page fail")
-        }
     }
 }
 
@@ -108,20 +90,6 @@ extension WebViewHandler: WKNavigationDelegate {
         delegate?.didLoadPage(isLoaded: true)
         callPendingFunctions()
     }
-
-    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-        let url = navigationAction.request.url
-        if let urlString = url?.absoluteString,
-           urlString.starts(with: tkeybridge),
-           let parameters = ParametersHandler.decodeParameters(inString: url!.absoluteString) {
-            delegate?.didReceiveParameters(parameters: parameters)
-        }
-        decisionHandler(.allow)
-    }
-
-    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        print(#function)
-    }
 }
 
 //MARK: - WKScriptMessageHandler
@@ -129,27 +97,12 @@ extension WebViewHandler: WKNavigationDelegate {
 extension WebViewHandler: WKScriptMessageHandler {
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        if message.name == tkeybridge {
-            if let body = message.body as? [String: AnyObject] {
-                delegate?.didReceiveMessage(message: body)
-            } else if let body = message.body as? String {
-                if let parameters = ParametersHandler.decodeParameters(inString: body) {
-                    delegate?.didReceiveParameters(parameters: parameters)
-                }
+        if message.name == scriptName {
+            if let dict = message.body as? Dictionary<String, Any> {
+                delegate?.didReceiveDictionary(dict: dict)
+            } else {
+                print("This body doesn't handle yet.", message.body)
             }
         }
-    }
-}
-
-//MARK: - WKURLSchemeHandler
-
-extension WebViewHandler: WKURLSchemeHandler {
-
-    func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
-        print("-----start------\(urlSchemeTask)----------")
-    }
-
-    func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {
-        print("-----stop------\(urlSchemeTask)----------")
     }
 }
