@@ -16,6 +16,7 @@ import CryptoSwift
 final class ViewController: UIViewController {
 
     private let loginButton = UIButton(type: .system)
+    private let testButton = UIButton(type: .system)
 
     lazy var webViewHandler: WebViewHandler = {
         let webViewHandler = WebViewHandler()
@@ -56,12 +57,18 @@ extension ViewController {
 
     private func setUpLayout() {
         view.addSubview(loginButton)
+        view.addSubview(testButton)
         loginButton.translatesAutoresizingMaskIntoConstraints = false
+        testButton.translatesAutoresizingMaskIntoConstraints = false
         let constraints = [
             loginButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loginButton.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             loginButton.widthAnchor.constraint(equalToConstant: 140),
-            loginButton.heightAnchor.constraint(equalToConstant: 44.0)
+            loginButton.heightAnchor.constraint(equalToConstant: 44.0),
+            testButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            testButton.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: 66.0),
+            testButton.widthAnchor.constraint(equalToConstant: 140),
+            testButton.heightAnchor.constraint(equalToConstant: 44.0)
         ]
         NSLayoutConstraint.activate(constraints)
     }
@@ -72,11 +79,18 @@ extension ViewController {
         loginButton.setTitle("Google Login", for: .normal)
         loginButton.setTitleColor(.white, for: .normal)
         loginButton.isEnabled = false
-        loginButton.addTarget(self, action: #selector(callNative01), for: .touchUpInside)
+        loginButton.addTarget(self, action: #selector(didTapLoginButton), for: .touchUpInside)
 
-        if let url = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "assets") {
-            let request = URLRequest(url: url)
-            webViewHandler.load(request)
+        testButton.layer.cornerRadius = 8.0
+        testButton.backgroundColor = .gray
+        testButton.setTitle("callNative01", for: .normal)
+        testButton.setTitleColor(.white, for: .normal)
+        testButton.isEnabled = false
+        testButton.addTarget(self, action: #selector(callNative01), for: .touchUpInside)
+
+        if let filePath = Bundle.main.path(forResource: "index", ofType: "html", inDirectory: "assets") {
+            let url = URL.init(fileURLWithPath: filePath)
+            webViewHandler.loadFileURL(url)
         }
     }
 
@@ -100,8 +114,6 @@ extension ViewController {
         let privateKey = generateRandom()
         let javascriptString = "splitKey('\(postboxKey)','\(privateKey)')"
         webViewHandler.callJavascript(javascriptString: javascriptString) { (success, result) in
-            print(result)
-            print(success)
             if let result = result {
                 print(result)
             }
@@ -111,8 +123,6 @@ extension ViewController {
     @objc private func callNative01() {
         let javascriptTest = "callNative01('nguyen')"
         webViewHandler.callJavascript(javascriptString: javascriptTest) { (success, result) in
-            print(result)
-            print(success)
             if let result = result {
                 print(result)
             }
@@ -133,6 +143,7 @@ extension ViewController: WebViewHandlerDelegate {
 
     func didLoadPage(isLoaded: Bool) {
         loginButton.isEnabled = isLoaded
+        testButton.isEnabled = isLoaded
     }
 
     func didReceiveMessage(message: Any) {

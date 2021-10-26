@@ -17,7 +17,8 @@ protocol WebViewHandlerDelegate: AnyObject {
 final class WebViewHandler: NSObject {
 
     var webView: WKWebView!
-    let tkeybridge = "tkeybridge"
+//    let tkeybridge = "tkeybridge"
+    let tkeybridge = "sendNative01"
     weak var delegate: WebViewHandlerDelegate?
 
     private var pageLoaded = false
@@ -49,6 +50,22 @@ final class WebViewHandler: NSObject {
     func load(_ request: URLRequest) {
         pageLoaded = false
         webView.load(request)
+    }
+
+    func loadFileURL(_ url: URL) {
+        pageLoaded = false
+        webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
+    }
+
+    func loadHTMLString(_ path: String) {
+        do {
+            let html = try String(contentsOfFile: path, encoding: .utf8)
+            let baseUrl = URL(fileURLWithPath: path)
+            webView.loadHTMLString(html, baseURL: baseUrl)
+            pageLoaded = false
+        } catch {
+            debugPrint("Load page fail")
+        }
     }
 }
 
