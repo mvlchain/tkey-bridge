@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+</head>
+<body>
+<h1>tkeybridge. this is served from html file</h1>
+<script type="text/javascript">
+    delete window.fetch;
+    function callNative01(name) {
+        window.webkit.messageHandlers.sendNative01.postMessage({"name": name});
+    }
+</script>
+<script src="polyfills.bundle.js"></script>
+<script src="index.bundle.js"></script>
+
+</body>
+</html>
