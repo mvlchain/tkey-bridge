@@ -17,7 +17,7 @@ protocol WebViewHandlerDelegate: AnyObject {
 final class WebViewHandler: NSObject {
 
     var webView: WKWebView!
-    let tkeybridge = "sendNative01"
+    let tkeybridge = "tkeybridge"
     weak var delegate: WebViewHandlerDelegate?
 
     private var pageLoaded = false
