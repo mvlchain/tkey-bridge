@@ -112,40 +112,27 @@ extension ViewController {
 
     private func splitKey() {
         guard let postboxKey = postboxKey else {
-            return
+            return print("Missing params to call splitKey")
         }
         let privateKey = generateRandom()
-        print("generateRandom", privateKey)
         let javascriptString = "splitKey('\(postboxKey)','\(privateKey)')"
-        webViewHandler.callJavascript(javascriptString: javascriptString) { (success, result) in
-            if let result = result {
-                print(result)
-            }
-        }
+        webViewHandler.callJavascript(javascriptString: javascriptString) { _,_  in }
     }
 
     private func saveTorusShare() {
         guard let postboxKey = postboxKey, let torusShare = torusShare, let loginId = loginId else {
-            return
+            return print("Missing params to call saveTorusShare")
         }
         let javascriptString = "saveTorusShare('\(postboxKey)','\(torusShare)','\(loginId)')"
-        webViewHandler.callJavascript(javascriptString: javascriptString) { (success, result) in
-            if let result = result {
-                print(result)
-            }
-        }
+        webViewHandler.callJavascript(javascriptString: javascriptString) { _,_  in }
     }
 
     private func reconstructKeyWithTorusShare() {
-        guard let postboxKey = postboxKey, let torusShare = torusShare else {
-            return
+        guard let postboxKey = postboxKey, let dsJson = dsJson else {
+            return print("Missing params to call reconstructKeyWithTorusShare")
         }
-        let javascriptString = "reconstructKeyWithTorusShare('\(postboxKey)','\(torusShare)')"
-        webViewHandler.callJavascript(javascriptString: javascriptString) { (success, result) in
-            if let result = result {
-                print(result)
-            }
-        }
+        let javascriptString = "reconstructKeyWithTorusShare('\(postboxKey)','\(dsJson)')"
+        webViewHandler.callJavascript(javascriptString: javascriptString) { _,_  in }
     }
 }
 
@@ -169,43 +156,25 @@ extension ViewController: WebViewHandlerDelegate {
         case Command.keySplitFinished.rawValue:
             print("tkey", "shareJson = \(dict)")
             guard let params = dict["params"] as? Dictionary<String, Any>,
-                  let ts = params["ts"] as? Dictionary<String, Any>,
-                  let ss = params["ss"]as? Dictionary<String, Any>,
-                  let ds = params["ds"] as? Dictionary<String, Any> else {
-                return
+                  let ts = params["ts"] as? String,
+                  let ss = params["ss"] as? String,
+                  let ds = params["ds"] as? String else {
+                return print("Fail to parse shareJson of keySplitFinished")
             }
-            do {
-                torusShare = try ts.toJson()
-                ssJson = try ss.toJson()
-                dsJson = try ds.toJson()
-                saveTorusShare()
-            } catch {
-                print(error)
-            }
-
+            torusShare = ts
+            ssJson = ss
+            dsJson = ds
+            saveTorusShare()
         case Command.torusShareSaved.rawValue:
             print("tkey", "torus share saved")
             reconstructKeyWithTorusShare()
         case Command.privateKeyReconstructed.rawValue:
-            print("tkey", "private key restored = \(dict)")
+            guard let pkey = dict["params"] as? String else {
+                return print("Fail to parse pkey of privateKeyReconstructed")
+            }
+            print("tkey", "private key restored = \(pkey)")
         default:
             print("This commnand doesn't handle yet.", command)
         }
-    }
-}
-
-// MARK: Convert Dictionary to json
-
-extension Dictionary {
-
-    /// Convert Dictionary to JSON string
-    /// - Throws: exception if dictionary cannot be converted to JSON data or when data cannot be converted to UTF8 string
-    /// - Returns: JSON string
-    func toJson() throws -> String {
-        let data = try JSONSerialization.data(withJSONObject: self)
-        if let string = String(data: data, encoding: .utf8) {
-            return string
-        }
-        throw NSError(domain: "Dictionary", code: 1, userInfo: ["message": "Data cannot be converted to .utf8 string"])
     }
 }
