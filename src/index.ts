@@ -59,7 +59,7 @@ async function _splitKey(postboxKey: string, privateKey: BN) {
 
 export function splitKey(postboxKey: string, pkeyString: string) {
     _splitKey(postboxKey, new BN(pkeyString, 16)).then(({torusShare, deviceShare, serverShare}) => {
-        _sendMessageToNative('keySplitFinished', {ts: torusShare, ds: deviceShare, ss: serverShare});
+        _sendMessageToNative('keySplitFinished', {ts: JSON.stringify(torusShare.toJSON()), ds: JSON.stringify(deviceShare.toJSON()), ss: JSON.stringify(serverShare.toJSON())});
     })
 }
 async function _saveTorusShare(postboxKey: string, providerShare: ShareStore, id: string) {

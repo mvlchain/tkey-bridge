@@ -97,9 +97,9 @@ class MainActivity : AppCompatActivity() {
         val shares = JSONObject(shareJson)
 
         // try to save share
-        val torusShare = shares.getJSONObject("ts").toString()
-        ssJson = shares.getJSONObject("ss").toString()
-        dsJson = shares.getJSONObject("ds").toString()
+        val torusShare = shares.getString("ts")
+        ssJson = shares.getString("ss").toString()
+        dsJson = shares.getString("ds").toString()
         Log.i("tkey", "ss = $ssJson")
         Log.i("tkey", "ds = $dsJson")
         Handler(Looper.getMainLooper()).post {
