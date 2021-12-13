@@ -14,7 +14,7 @@ import ServiceProviderBase from "@tkey/service-provider-base"
 
 const proxyContractAddress = process.env.PROXY_CONTRACT_ADDR;
 const network = process.env.NETWORK as TORUS_NETWORK_TYPE;
-const version = '0.0.2';
+const version = '0.0.3';
 
 const directWebBaseUrl = location.origin + path.join(path.dirname(location.pathname), "serviceworker")
 console.log("tkey-bridge version: " + version);
@@ -126,6 +126,23 @@ async function _reconstructKeyWithTorusShare(postboxKey: string, anotherShare: S
   return privKey.toString(16);
 }
 
+async function _getTorusShare(postboxKey: string): Promise<ShareStore> {
+  const serviceProvider = new ServiceProviderBase({postboxKey});
+  const storageLayer = new TorusStorageLayer({
+    hostUrl: "https://metadata.tor.us",
+    serviceProvider,
+    enableLogging: true
+  });
+
+  const tkey = new ThresholdKey({serviceProvider, storageLayer});
+
+  const rawServiceProviderShare = await tkey.storageLayer.getMetadata({
+    serviceProvider: tkey.serviceProvider
+  });
+
+  return rawServiceProviderShare as ShareStore
+}
+
 export function reconstructKeyWithTorusShare(postboxKey: string, shareJson: string) {
   console.log('shareJson string = ' + shareJson);
   console.log('postbox key = ' + postboxKey);
@@ -136,6 +153,18 @@ export function reconstructKeyWithTorusShare(postboxKey: string, shareJson: stri
     .catch((err) => {
       console.error(err.message);
       _sendMessageToNative('privateKeyReconstructFailed', err.message);
+    });
+}
+
+export function getTorusShare(postboxKey: string) {
+  _getTorusShare(postboxKey)
+    .then((ts) => {
+      _sendMessageToNative('torusShareRetrieved', JSON.stringify(ts.toJSON()));
+    })
+    .catch((err) => {
+      console.error('getTorusShare failed');
+      console.error(err.message);
+      _sendMessageToNative('torusShareRetrieveFailed', err.message);
     });
 }
 
@@ -173,3 +202,6 @@ window.saveTorusShare = saveTorusShare;
 
 // @ts-ignore
 window.reconstructKeyWithTorusShare = reconstructKeyWithTorusShare;
+
+// @ts-ignore
+window.getTorusShare = getTorusShare;
