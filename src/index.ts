@@ -14,7 +14,7 @@ import ServiceProviderBase from "@tkey/service-provider-base"
 
 const proxyContractAddress = process.env.PROXY_CONTRACT_ADDR;
 const network = process.env.NETWORK as TORUS_NETWORK_TYPE;
-const version = '0.0.3';
+const version = '0.0.4';
 
 const directWebBaseUrl = location.origin + path.join(path.dirname(location.pathname), "serviceworker")
 console.log("tkey-bridge version: " + version);
@@ -117,8 +117,7 @@ async function _reconstructKeyWithTorusShare(postboxKey: string, anotherShare: S
   const rawServiceProviderShare = await tkey.storageLayer.getMetadata({
     serviceProvider: tkey.serviceProvider
   });
-  console.log('rawServiceProviderShare');
-  console.dir(rawServiceProviderShare);
+  console.log('rawServiceProviderShare = ' + JSON.stringify((rawServiceProviderShare as ShareStore).toJSON()));
   // @ts-ignore
   await tkey.initialize({withShare: rawServiceProviderShare, neverInitializeNewKey: true });
   tkey.inputShareStore(anotherShare);
