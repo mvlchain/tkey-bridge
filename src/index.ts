@@ -14,7 +14,7 @@ import ServiceProviderBase from "@tkey/service-provider-base"
 
 const proxyContractAddress = process.env.PROXY_CONTRACT_ADDR;
 const network = process.env.NETWORK as TORUS_NETWORK_TYPE;
-const version = '0.0.7-debug3';
+const version = '0.0.8';
 
 const directWebBaseUrl = location.origin + path.join(path.dirname(location.pathname), "serviceworker")
 console.log("tkey-bridge version: " + version);
@@ -24,10 +24,15 @@ console.log("directWebBaseUrl", directWebBaseUrl);
 
 async function _splitKey(postboxKey: string, privateKey: BN) {
   console.log('enter splitKey');
+  /*
+  enableLogging?: boolean;
+  hostUrl?: string;
+  serverTimeOffset?: number;
+   */
   const serviceProvider = new ServiceProviderBase({postboxKey});
   const storageLayer = new TorusStorageLayer({
     hostUrl: "https://metadata.tor.us",
-    serviceProvider,
+    // serviceProvider,
     enableLogging: true
   });
 
@@ -37,21 +42,13 @@ async function _splitKey(postboxKey: string, privateKey: BN) {
     importedKey: privateKey,
     initializeModules: true
   });
-  console.log('after _initializeNewKey');
-
-  const tpubPoly = tkey.metadata.getLatestPublicPolynomial();
-  console.log('test1');
-  const tpreviousPolyID = tpubPoly.getPolynomialID();
-  console.log('test2');
-  const texistingShareIndexes = tkey.metadata.getShareIndexesForPolynomial(tpreviousPolyID);
-  console.log('test3');
-
+  // console.log('after _initializeNewKey');
 
   const {newShareStores, newShareIndex} = await tkey.generateNewShare();
-  console.log('after generatenewshare');
+  // console.log('after generatenewshare');
 
   const pubPoly = tkey.metadata.getLatestPublicPolynomial();
-  console.log('after getLatestPublicPolynomial');
+  // console.log('after getLatestPublicPolynomial');
   const pubPolyID = pubPoly.getPolynomialID();
 
   const torusShare = newShareStores['1'];
@@ -59,7 +56,7 @@ async function _splitKey(postboxKey: string, privateKey: BN) {
   let serverShare: ShareStore = null;
 
   const shareIds = tkey.metadata.getShareIndexesForPolynomial(pubPolyID);
-  console.log('after getShareIndexesForPolynomial');
+  // console.log('after getShareIndexesForPolynomial');
   for (let k=0; k < shareIds.length; k++) {
     if (shareIds[k] !== '1') {
       if (!deviceShare) {
@@ -79,6 +76,7 @@ export function splitKey(postboxKey: string, pkeyString: string) {
       _sendMessageToNative('keySplitFinished', {ts: JSON.stringify(torusShare.toJSON()), ds: JSON.stringify(deviceShare.toJSON()), ss: JSON.stringify(serverShare.toJSON())});
     })
     .catch((err) => {
+      console.error(JSON.stringify(err));
       console.error(err.message);
       _sendMessageToNative('keySplitFailed', err.message);
     });
@@ -87,7 +85,7 @@ async function _saveTorusShare(postboxKey: string, providerShare: ShareStore, id
   const serviceProvider = new ServiceProviderBase({postboxKey});
   const storageLayer = new TorusStorageLayer({
     hostUrl: "https://metadata.tor.us",
-    serviceProvider,
+    // serviceProvider,
     enableLogging: true
   });
 
@@ -122,7 +120,7 @@ async function _reconstructKeyWithTorusShare(postboxKey: string, anotherShare: S
   const serviceProvider = new ServiceProviderBase({postboxKey});
   const storageLayer = new TorusStorageLayer({
     hostUrl: "https://metadata.tor.us",
-    serviceProvider,
+    // serviceProvider,
     enableLogging: true
   });
 
@@ -140,18 +138,23 @@ async function _reconstructKeyWithTorusShare(postboxKey: string, anotherShare: S
 }
 
 async function _getTorusShare(postboxKey: string): Promise<Object> {
+  // console.log("entering _getTorusShare");
   const serviceProvider = new ServiceProviderBase({postboxKey});
+  // console.log("after init serviceProvider");
   const storageLayer = new TorusStorageLayer({
-    hostUrl: "https://metadata.tor.us",
-    serviceProvider,
+    // hostUrl: "https://metadata.tor.us",
+    // serviceProvider,
     enableLogging: true
   });
+  // console.log("after init storageLayer");
 
   const tkey = new ThresholdKey({serviceProvider, storageLayer});
+  // console.log("after init Thresholdkey");
 
   const rawServiceProviderShare = await tkey.storageLayer.getMetadata({
     serviceProvider: tkey.serviceProvider
   });
+  // console.log("after get rawServiceProviderShare");
 
   return rawServiceProviderShare
 }
@@ -175,8 +178,10 @@ export function getTorusShare(postboxKey: string) {
       _sendMessageToNative('torusShareRetrieved', JSON.stringify(ts));
     })
     .catch((err) => {
+      // console.log(err)
+      // console.error(err);
       console.error('getTorusShare failed');
-      console.error(err.message);
+      console.error(JSON.stringify(err));
       _sendMessageToNative('torusShareRetrieveFailed', err.message);
     });
 }

@@ -4,9 +4,10 @@
   "private": true,
   "license": "MIT",
   "dependencies": {
-    "@tkey/core": "^4.4.0",
-    "@tkey/service-provider-torus": "^4.4.0",
-    "@tkey/storage-layer-torus": "^4.4.0",
+    "@tkey/core": "^5.1.0",
+    "@tkey/service-provider-torus": "^5.1.0",
+    "@tkey/storage-layer-torus": "^5.1.0",
+    "@toruslabs/torus-direct-web-sdk": "^5.0.3",
     "@types/bn.js": "^5.1.0",
     "eccrypto": "^1.1.6",
     "whatwg-fetch": "^3.6.2"
