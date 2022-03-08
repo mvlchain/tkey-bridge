@@ -17,8 +17,8 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         manifestPlaceholders = [
-                'torusRedirectScheme': 'torusapp',
-                'torusRedirectHost': 'org.torusresearch.torusdirectandroid',
+                'torusRedirectScheme': 'clutchwallet',
+                'torusRedirectHost': 'io.mvlchain.customauthandroid',
                 'torusRedirectPathPrefix': '/redirect'
         ]
 
@@ -32,7 +32,7 @@ android {
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8;
     }
     kotlinOptions {
         jvmTarget = '1.8'

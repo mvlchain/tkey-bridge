@@ -14,7 +14,7 @@ import ServiceProviderBase from "@tkey/service-provider-base"
 
 const proxyContractAddress = process.env.PROXY_CONTRACT_ADDR;
 const network = process.env.NETWORK as TORUS_NETWORK_TYPE;
-const version = '0.0.4';
+const version = '0.0.7-debug3';
 
 const directWebBaseUrl = location.origin + path.join(path.dirname(location.pathname), "serviceworker")
 console.log("tkey-bridge version: " + version);
@@ -23,6 +23,7 @@ console.log("network", network)
 console.log("directWebBaseUrl", directWebBaseUrl);
 
 async function _splitKey(postboxKey: string, privateKey: BN) {
+  console.log('enter splitKey');
   const serviceProvider = new ServiceProviderBase({postboxKey});
   const storageLayer = new TorusStorageLayer({
     hostUrl: "https://metadata.tor.us",
@@ -31,14 +32,26 @@ async function _splitKey(postboxKey: string, privateKey: BN) {
   });
 
   const tkey = new ThresholdKey({serviceProvider, storageLayer, enableLogging: true});
+  console.log('before _initializeNewKey');
   await tkey._initializeNewKey({
     importedKey: privateKey,
     initializeModules: true
   });
+  console.log('after _initializeNewKey');
+
+  const tpubPoly = tkey.metadata.getLatestPublicPolynomial();
+  console.log('test1');
+  const tpreviousPolyID = tpubPoly.getPolynomialID();
+  console.log('test2');
+  const texistingShareIndexes = tkey.metadata.getShareIndexesForPolynomial(tpreviousPolyID);
+  console.log('test3');
+
 
   const {newShareStores, newShareIndex} = await tkey.generateNewShare();
+  console.log('after generatenewshare');
 
   const pubPoly = tkey.metadata.getLatestPublicPolynomial();
+  console.log('after getLatestPublicPolynomial');
   const pubPolyID = pubPoly.getPolynomialID();
 
   const torusShare = newShareStores['1'];
@@ -46,6 +59,7 @@ async function _splitKey(postboxKey: string, privateKey: BN) {
   let serverShare: ShareStore = null;
 
   const shareIds = tkey.metadata.getShareIndexesForPolynomial(pubPolyID);
+  console.log('after getShareIndexesForPolynomial');
   for (let k=0; k < shareIds.length; k++) {
     if (shareIds[k] !== '1') {
       if (!deviceShare) {
@@ -117,7 +131,7 @@ async function _reconstructKeyWithTorusShare(postboxKey: string, anotherShare: S
   const rawServiceProviderShare = await tkey.storageLayer.getMetadata({
     serviceProvider: tkey.serviceProvider
   });
-  console.log('rawServiceProviderShare = ' + JSON.stringify((rawServiceProviderShare as ShareStore).toJSON()));
+  console.log('rawServiceProviderShare = ' + JSON.stringify(rawServiceProviderShare));
   // @ts-ignore
   await tkey.initialize({withShare: rawServiceProviderShare, neverInitializeNewKey: true });
   tkey.inputShareStore(anotherShare);
@@ -125,7 +139,7 @@ async function _reconstructKeyWithTorusShare(postboxKey: string, anotherShare: S
   return privKey.toString(16);
 }
 
-async function _getTorusShare(postboxKey: string): Promise<ShareStore> {
+async function _getTorusShare(postboxKey: string): Promise<Object> {
   const serviceProvider = new ServiceProviderBase({postboxKey});
   const storageLayer = new TorusStorageLayer({
     hostUrl: "https://metadata.tor.us",
@@ -139,7 +153,7 @@ async function _getTorusShare(postboxKey: string): Promise<ShareStore> {
     serviceProvider: tkey.serviceProvider
   });
 
-  return rawServiceProviderShare as ShareStore
+  return rawServiceProviderShare
 }
 
 export function reconstructKeyWithTorusShare(postboxKey: string, shareJson: string) {
@@ -158,7 +172,7 @@ export function reconstructKeyWithTorusShare(postboxKey: string, shareJson: stri
 export function getTorusShare(postboxKey: string) {
   _getTorusShare(postboxKey)
     .then((ts) => {
-      _sendMessageToNative('torusShareRetrieved', JSON.stringify(ts.toJSON()));
+      _sendMessageToNative('torusShareRetrieved', JSON.stringify(ts));
     })
     .catch((err) => {
       console.error('getTorusShare failed');

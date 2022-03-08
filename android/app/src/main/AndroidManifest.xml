@@ -19,6 +19,22 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Accepts URIs that begin with "http://www.example.com/gizmos” -->
+                <data android:scheme="http"
+                    android:host="io.mvlchain"
+                    android:pathPrefix="/customauthandroid" />
+            </intent-filter>
+            <intent-filter>
+                <data android:scheme="clutchwallet"
+                    android:pathPattern="/.*"
+                    android:pathPrefix="/redirect"
+                    android:host="io.mvlchain.customauthandroid" />
+
+            </intent-filter>
         </activity>
     </application>
 

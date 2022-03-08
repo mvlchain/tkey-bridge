@@ -65,7 +65,7 @@ class MainActivity : AppCompatActivity() {
         webView.loadUrl("file:///android_asset/index.html")
 
         // direct sdk init
-        val directSdkArgs = DirectSdkArgs("https://scripts.toruswallet.io/redirect.html", TorusNetwork.TESTNET, "torusapp://org.torusresearch.torusdirectandroid/redirect")
+        val directSdkArgs = DirectSdkArgs("https://staging.mvlclutch.io/customauth_redirect.html", TorusNetwork.TESTNET, "clutchwallet://io.mvlchain.customauthandroid/redirect")
         torusSdk = TorusDirectSdk(directSdkArgs, this)
 
         val loginResultCf = torusSdk.triggerLogin(SubVerifierDetails(LoginType.GOOGLE, "clutch-google-testnet", "354250895959-dneacv3fol73d6a6lf789mcjo2jjpbms.apps.googleusercontent.com")
@@ -86,7 +86,6 @@ class MainActivity : AppCompatActivity() {
                 Handler(Looper.getMainLooper()).post {
                     webView.loadUrl("javascript:window.splitKey('${this.postboxKey}', '$privateKey')")
                 }
-
             }
         }
     }
@@ -113,7 +112,7 @@ class MainActivity : AppCompatActivity() {
 
         Handler(Looper.getMainLooper()).post {
             // try to restore share
-            webView.loadUrl("javascript:window.reconstructKeyWithTorusShare('${this.postboxKey}','${this.dsJson}')")
+            webView.loadUrl("javascript:window.reconstructKeyWithTorusShare('${this.postboxKey}','${this.ssJson}')")
         }
     }
 
