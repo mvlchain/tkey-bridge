@@ -14,7 +14,7 @@ import ServiceProviderBase from "@tkey/service-provider-base"
 
 const proxyContractAddress = process.env.PROXY_CONTRACT_ADDR;
 const network = process.env.NETWORK as TORUS_NETWORK_TYPE;
-const version = '0.0.9';
+const version = '0.0.10';
 
 const directWebBaseUrl = location.origin + path.join(path.dirname(location.pathname), "serviceworker")
 console.log("tkey-bridge version: " + version);
@@ -92,6 +92,7 @@ async function _saveTorusShare(postboxKey: string, providerShare: ShareStore, id
   const tkey = new ThresholdKey({serviceProvider, storageLayer});
   await tkey.initialize({neverInitializeNewKey: true });
   console.log('after tkey.initialize')
+  console.log(`save torus share = ${JSON.stringify(providerShare.toJSON())}, postboxkey=${postboxKey}`);
   await tkey.storageLayer.setMetadata({
     input: providerShare,
     serviceProvider
@@ -154,7 +155,8 @@ async function _getTorusShare(postboxKey: string): Promise<Object> {
   const rawServiceProviderShare = await tkey.storageLayer.getMetadata({
     serviceProvider: tkey.serviceProvider
   });
-  console.log("after get rawServiceProviderShare");
+  // console.log("after get rawServiceProviderShare");
+  console.log(`get torus share = ${JSON.stringify(rawServiceProviderShare)}, postboxkey=${postboxKey}`);
 
   return rawServiceProviderShare
 }
