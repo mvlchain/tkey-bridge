@@ -5,6 +5,7 @@ import {ShareStore} from "@tkey/common-types";
 import {TORUS_NETWORK_TYPE} from "@toruslabs/torus-direct-web-sdk";
 import path from "path";
 import ServiceProviderBase from "@tkey/service-provider-base"
+import log from 'loglevel';
 
 /*
 1. split given key
@@ -14,16 +15,22 @@ import ServiceProviderBase from "@tkey/service-provider-base"
 
 const proxyContractAddress = process.env.PROXY_CONTRACT_ADDR;
 const network = process.env.NETWORK as TORUS_NETWORK_TYPE;
-const version = '0.0.10';
+const variant = 'RELEASE';
+const version = `0.0.12-${variant}`;
+// @ts-ignore
+const isDebug = variant === 'DEBUG';
+
+log.setLevel(isDebug ? 'trace' : 'info', false);
 
 const directWebBaseUrl = location.origin + path.join(path.dirname(location.pathname), "serviceworker")
-console.log("tkey-bridge version: " + version);
-console.log("proxyContractAddress", proxyContractAddress)
-console.log("network", network)
-console.log("directWebBaseUrl", directWebBaseUrl);
+
+log.info("tkey-bridge version: " + version);
+log.info("proxyContractAddress", proxyContractAddress)
+log.info("network", network)
+log.info("directWebBaseUrl", directWebBaseUrl);
 
 async function _splitKey(postboxKey: string, privateKey: BN) {
-  console.log('enter splitKey');
+  log.trace('enter splitKey');
   /*
   enableLogging?: boolean;
   hostUrl?: string;
@@ -37,18 +44,18 @@ async function _splitKey(postboxKey: string, privateKey: BN) {
   });
 
   const tkey = new ThresholdKey({serviceProvider, storageLayer, enableLogging: true});
-  console.log('before _initializeNewKey');
+  log.trace('before _initializeNewKey');
   await tkey._initializeNewKey({
     importedKey: privateKey,
     initializeModules: true
   });
-  // console.log('after _initializeNewKey');
+  log.trace('after _initializeNewKey');
 
   const {newShareStores, newShareIndex} = await tkey.generateNewShare();
-  // console.log('after generatenewshare');
+  log.trace('after generatenewshare');
 
   const pubPoly = tkey.metadata.getLatestPublicPolynomial();
-  // console.log('after getLatestPublicPolynomial');
+  log.trace('after getLatestPublicPolynomial');
   const pubPolyID = pubPoly.getPolynomialID();
 
   const torusShare = newShareStores['1'];
@@ -56,7 +63,7 @@ async function _splitKey(postboxKey: string, privateKey: BN) {
   let serverShare: ShareStore = null;
 
   const shareIds = tkey.metadata.getShareIndexesForPolynomial(pubPolyID);
-  // console.log('after getShareIndexesForPolynomial');
+  log.trace('after getShareIndexesForPolynomial');
   for (let k=0; k < shareIds.length; k++) {
     if (shareIds[k] !== '1') {
       if (!deviceShare) {
@@ -76,8 +83,8 @@ export function splitKey(postboxKey: string, pkeyString: string) {
       _sendMessageToNative('keySplitFinished', {ts: JSON.stringify(torusShare.toJSON()), ds: JSON.stringify(deviceShare.toJSON()), ss: JSON.stringify(serverShare.toJSON())});
     })
     .catch((err) => {
-      console.error(JSON.stringify(err));
-      console.error(err.message);
+      log.error(JSON.stringify(err));
+      log.error(err.message);
       _sendMessageToNative('keySplitFailed', err.message);
     });
 }
@@ -91,28 +98,28 @@ async function _saveTorusShare(postboxKey: string, providerShare: ShareStore, id
 
   const tkey = new ThresholdKey({serviceProvider, storageLayer});
   await tkey.initialize({neverInitializeNewKey: true });
-  console.log('after tkey.initialize')
-  console.log(`save torus share = ${JSON.stringify(providerShare.toJSON())}, postboxkey=${postboxKey}`);
+  log.trace('after tkey.initialize')
+  log.debug(`save torus share = ${JSON.stringify(providerShare.toJSON())}, postboxkey=${postboxKey}`);
   await tkey.storageLayer.setMetadata({
     input: providerShare,
     serviceProvider
   });
-  console.log('after setmetadata')
+  log.trace('after setmetadata')
   await tkey.addShareDescription(providerShare.share.shareIndex.toString(), JSON.stringify({
     module: 'serviceProvider',
     id
   }));
-  console.log('after addShareDescription')
+  log.trace('after addShareDescription')
 }
 
 export function saveTorusShare(postboxKey: string, providerShare: string, id: string) {
   _saveTorusShare(postboxKey, ShareStore.fromJSON(JSON.parse(providerShare)), id)
     .then(() => {
-      console.log('after _saveTorusShare.then')
+      log.trace('after _saveTorusShare.then')
       _sendMessageToNative('torusShareSaved', null);
     })
     .catch((err) => {
-      console.error(err.message);
+      log.error(err.message);
       _sendMessageToNative('saveTorusShareFailed', err.message);
     });
 }
@@ -130,7 +137,7 @@ async function _reconstructKeyWithTorusShare(postboxKey: string, anotherShare: S
   const rawServiceProviderShare = await tkey.storageLayer.getMetadata({
     serviceProvider: tkey.serviceProvider
   });
-  console.log('rawServiceProviderShare = ' + JSON.stringify(rawServiceProviderShare));
+  log.debug('rawServiceProviderShare = ' + JSON.stringify(rawServiceProviderShare));
   // @ts-ignore
   await tkey.initialize({withShare: rawServiceProviderShare, neverInitializeNewKey: true });
   tkey.inputShareStore(anotherShare);
@@ -139,37 +146,37 @@ async function _reconstructKeyWithTorusShare(postboxKey: string, anotherShare: S
 }
 
 async function _getTorusShare(postboxKey: string): Promise<Object> {
-  console.log("entering _getTorusShare");
+  log.trace("entering _getTorusShare");
   const serviceProvider = new ServiceProviderBase({postboxKey});
-  console.log("after init serviceProvider");
+  log.trace("after init serviceProvider");
   const storageLayer = new TorusStorageLayer({
     hostUrl: "https://metadata.tor.us",
     // serviceProvider,
     enableLogging: true
   });
-  console.log("after init storageLayer");
+  log.trace("after init storageLayer");
 
   const tkey = new ThresholdKey({serviceProvider, storageLayer});
-  console.log("after init Thresholdkey");
+  log.trace("after init Thresholdkey");
 
   const rawServiceProviderShare = await tkey.storageLayer.getMetadata({
     serviceProvider: tkey.serviceProvider
   });
-  // console.log("after get rawServiceProviderShare");
-  console.log(`get torus share = ${JSON.stringify(rawServiceProviderShare)}, postboxkey=${postboxKey}`);
+  log.trace("after get rawServiceProviderShare");
+  log.debug(`get torus share = ${JSON.stringify(rawServiceProviderShare)}, postboxkey=${postboxKey}`);
 
   return rawServiceProviderShare
 }
 
 export function reconstructKeyWithTorusShare(postboxKey: string, shareJson: string) {
-  console.log('shareJson string = ' + shareJson);
-  console.log('postbox key = ' + postboxKey);
+  log.debug('shareJson string = ' + shareJson);
+  log.debug('postbox key = ' + postboxKey);
   _reconstructKeyWithTorusShare(postboxKey, ShareStore.fromJSON(JSON.parse(shareJson)))
     .then((privKey) => {
       _sendMessageToNative("privateKeyReconstructed", privKey);
     })
     .catch((err) => {
-      console.error(err.message);
+      log.error(err.message);
       _sendMessageToNative('privateKeyReconstructFailed', err.message);
     });
 }
@@ -180,10 +187,8 @@ export function getTorusShare(postboxKey: string) {
       _sendMessageToNative('torusShareRetrieved', JSON.stringify(ts));
     })
     .catch((err) => {
-      // console.log(err)
-      // console.error(err);
-      console.error('getTorusShare failed');
-      console.error(JSON.stringify(err));
+      log.error('getTorusShare failed');
+      log.error(JSON.stringify(err));
       _sendMessageToNative('torusShareRetrieveFailed', err.message);
     });
 }
@@ -210,7 +215,7 @@ function _sendMessageToNative(command: string, params?: any) {
       window.tkeybridge[command]();
     }
   } else {
-    console.error('detected device is neither iOS nor Android');
+    log.error('detected device is neither iOS nor Android');
   }
 }
 
