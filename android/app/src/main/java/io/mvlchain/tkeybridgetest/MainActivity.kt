@@ -101,20 +101,26 @@ class MainActivity : AppCompatActivity() {
         dsJson = shares.getString("ds").toString()
         Log.i("tkey", "ss = $ssJson")
         Log.i("tkey", "ds = $dsJson")
-        Handler(Looper.getMainLooper()).post {
-            webView.loadUrl("javascript:window.saveTorusShare('${this.postboxKey}', '$torusShare', '${this.loginId}')")
-        }
-    }
+//        Handler(Looper.getMainLooper()).post {
+//            webView.loadUrl("javascript:window.saveTorusShare('${this.postboxKey}', '$torusShare', '${this.loginId}')")
+//        }
 
-    @JavascriptInterface
-    fun torusShareSaved() {
-        Log.i("tkey", "torus share saved")
 
         Handler(Looper.getMainLooper()).post {
             // try to restore share
             webView.loadUrl("javascript:window.reconstructKeyWithTorusShare('${this.postboxKey}','${this.ssJson}')")
         }
     }
+
+//    @JavascriptInterface
+//    fun torusShareSaved() {
+//        Log.i("tkey", "torus share saved")
+//
+//        Handler(Looper.getMainLooper()).post {
+//            // try to restore share
+//            webView.loadUrl("javascript:window.reconstructKeyWithTorusShare('${this.postboxKey}','${this.ssJson}')")
+//        }
+//    }
 
     @JavascriptInterface
     fun privateKeyReconstructed(pkey: String) {
