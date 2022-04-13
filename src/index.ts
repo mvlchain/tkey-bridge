@@ -17,7 +17,7 @@ import {generatePrivate} from "@toruslabs/eccrypto";
 const proxyContractAddress = process.env.PROXY_CONTRACT_ADDR;
 const network = process.env.NETWORK as TORUS_NETWORK_TYPE;
 const variant = 'DEBUG';
-const version = `0.0.12-${variant}`;
+const version = `0.1.1-${variant}`;
 // @ts-ignore
 const isDebug = variant === 'DEBUG';
 
@@ -38,11 +38,14 @@ log.info("network", network)
 log.info("directWebBaseUrl", directWebBaseUrl);
 
 async function _splitKey(postboxKey: string, privateKey: BN): Promise<{ torusShare: ShareStore, deviceShare: ShareStore, serverShare: ShareStore }> {
+  log.trace('postboxkey=' + postboxKey);
   const serviceProvider = getServiceProvider(postboxKey);
   const tkey = new ThresholdKey({serviceProvider, storageLayer});
   const initResult = await tkey.initialize({importKey: privateKey});
   const pubkey = getPubKeyPoint(privateKey);
   if (!(pubkey.x.eq(initResult.pubKey.x) && pubkey.y.eq(initResult.pubKey.y))) {
+    log.trace('initResult.pubKey='+JSON.stringify(initResult.pubKey.toJSON()));
+    log.trace('pubkey='+JSON.stringify(pubkey.toJSON()));
     return _forceInitAndSplit(tkey, privateKey);
   } else if (initResult.requiredShares > 0) { // we need more shares, but we don't have it now!
     // we reset with key again
@@ -88,6 +91,7 @@ async function _forceInitAndSplit(tkey: ThresholdKey, privateKey: BN): Promise<{
   } else if (details.requiredShares === 1) {
     const share = new BN(generatePrivate());
     await tkey._initializeNewKey({importedKey: privateKey, determinedShare: share});
+    log.trace('after _initializeNewKey');
   } else {
     throw new Error('requiredShares > 1');
   }
@@ -139,7 +143,7 @@ async function _reconstructKeyWithTorusShare(postboxKey: string, nonProviderShar
 }
 
 
-async function _getTorusShare(postboxKey: string): Promise<ShareStore> {
+async function _getTorusShare(postboxKey: string): Promise<ShareStore | null> {
   log.trace("entering _getTorusShare");
   const serviceProvider = getServiceProvider(postboxKey);
   log.trace("after init serviceProvider");
@@ -181,7 +185,7 @@ export function reconstructKeyWithTorusShare(postboxKey: string, shareJson: stri
 export function getTorusShare(postboxKey: string) {
   _getTorusShare(postboxKey)
     .then((ts) => {
-      _sendMessageToNative('torusShareRetrieved', ts.toJSON());
+      _sendMessageToNative('torusShareRetrieved', ts && ts.toJSON());
     })
     .catch((err) => {
       log.error('getTorusShare failed');

@@ -4,6 +4,7 @@
   "private": true,
   "license": "MIT",
   "dependencies": {
+    "@babel/runtime": "^7.17.9",
     "@tkey/core": "^5.1.0",
     "@tkey/service-provider-torus": "^5.1.0",
     "@tkey/storage-layer-torus": "^5.1.0",
@@ -11,6 +12,7 @@
     "@types/bn.js": "^5.1.0",
     "eccrypto": "^1.1.6",
     "loglevel": "^1.8.0",
+    "regenerator-runtime": "^0.13.9",
     "whatwg-fetch": "^3.6.2"
   },
   "scripts": {
@@ -18,7 +20,12 @@
     "serve": "webpack serve"
   },
   "devDependencies": {
+    "@babel/core": "^7.17.9",
+    "@babel/plugin-transform-runtime": "^7.17.0",
+    "@babel/preset-env": "^7.16.11",
+    "@babel/preset-es2015": "^7.0.0-beta.53",
     "assert": "^2.0.0",
+    "babel-loader": "^8.2.4",
     "bn.js": "^5.1.0",
     "buffer": "^6.0.3",
     "crypto-browserify": "^3.12.0",
