@@ -1,4 +1,4 @@
-import ThresholdKey, {CoreError} from "@tkey/core";
+import ThresholdKey, {CoreError, lagrangeInterpolation} from "@tkey/core";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
 import BN from "bn.js"
 import {getPubKeyPoint, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap} from "@tkey/common-types";
@@ -17,7 +17,7 @@ import {generatePrivate} from "@toruslabs/eccrypto";
 const proxyContractAddress = process.env.PROXY_CONTRACT_ADDR;
 const network = process.env.NETWORK as TORUS_NETWORK_TYPE;
 const variant = 'DEBUG';
-const version = `0.1.1-${variant}`;
+const version = `0.1.2-${variant}`;
 // @ts-ignore
 const isDebug = variant === 'DEBUG';
 
@@ -112,6 +112,16 @@ export function splitKey(postboxKey: string, pkeyString: string) {
     });
 }
 
+function _reconstructKeyWithShares(share1: ShareStore, share2: ShareStore): BN {
+  // check sharestore poly id for validation
+  if (share1.polynomialID !== share2.polynomialID) {
+    throw new Error("share's polynomial id don't match");
+  }
+
+  const privKey = lagrangeInterpolation([share1.share.share, share2.share.share], [share1.share.shareIndex, share2.share.shareIndex]);
+  return privKey;
+}
+
 async function _reconstructKeyWithTorusShare(postboxKey: string, nonProviderShare: ShareStore): Promise<{ privateKey: BN, share: ShareStore }> {
   const serviceProvider = getServiceProvider(postboxKey);
   const tkey = new ThresholdKey({serviceProvider, storageLayer});
@@ -169,12 +179,23 @@ async function _getTorusShare(postboxKey: string): Promise<ShareStore | null> {
   return shares['1'];
 }
 
+export function reconstructKeyWithShares(shareJson: string, shareJson2: string) {
+  try {
+    const share1 = ShareStore.fromJSON(JSON.parse(shareJson));
+    const share2 = ShareStore.fromJSON(JSON.parse(shareJson2));
+    const privKey = _reconstructKeyWithShares(share1, share2);
+    _sendMessageToNative("privateKeyReconstructed", privKey.toString('hex'));
+  } catch (err) {
+    _sendMessageToNative('privateKeyReconstructFailed', err.message);
+  }
+}
+
 export function reconstructKeyWithTorusShare(postboxKey: string, shareJson: string) {
   log.debug('shareJson string = ' + shareJson);
   log.debug('postbox key = ' + postboxKey);
   _reconstructKeyWithTorusShare(postboxKey, ShareStore.fromJSON(JSON.parse(shareJson)))
     .then(({privateKey, share}) => {
-      _sendMessageToNative("privateKeyReconstructed", {privateKey: privateKey.toString('hex'), share: JSON.stringify(share.toJSON())} );
+      _sendMessageToNative("privateKeyReconstructedWithShares", {privateKey: privateKey.toString('hex'), share: JSON.stringify(share.toJSON())} );
     })
     .catch((err) => {
       log.error(err.message);
@@ -225,6 +246,9 @@ window.splitKey = splitKey;
 
 // @ts-ignore
 window.reconstructKeyWithTorusShare = reconstructKeyWithTorusShare;
+
+// @ts-ignore
+window.reconstructKeyWithShares = reconstructKeyWithShares;
 
 // @ts-ignore
 window.getTorusShare = getTorusShare;
