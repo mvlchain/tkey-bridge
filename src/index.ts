@@ -17,7 +17,7 @@ import {generatePrivate} from "@toruslabs/eccrypto";
 const proxyContractAddress = process.env.PROXY_CONTRACT_ADDR;
 const network = process.env.NETWORK as TORUS_NETWORK_TYPE;
 const variant = 'DEBUG';
-const version = `0.1.2-${variant}`;
+const version = `0.1.3-${variant}`;
 // @ts-ignore
 const isDebug = variant === 'DEBUG';
 
@@ -163,10 +163,11 @@ async function _getTorusShare(postboxKey: string): Promise<ShareStore | null> {
       neverInitializeNewKey: true
     });
   } catch (e) {
-    if (e instanceof CoreError && e.code === 1000 && e.message === 'key has not been generated yet') {
-      log.trace('this is new user');
+    if (e instanceof CoreError && e.code === 1000 && e.message.includes('key has not been generated yet')) {
+      log.trace('this is new user case');
       return null;
     } else {
+      log.trace('tkey torus share retrieval error case');
       throw e;
     }
   }
