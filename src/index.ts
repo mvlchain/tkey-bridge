@@ -17,7 +17,7 @@ import {generatePrivate} from "@toruslabs/eccrypto";
 const proxyContractAddress = process.env.PROXY_CONTRACT_ADDR;
 const network = process.env.NETWORK as TORUS_NETWORK_TYPE;
 const variant = 'DEBUG';
-const version = `0.1.3-${variant}`;
+const version = `0.1.4-${variant}`;
 // @ts-ignore
 const isDebug = variant === 'DEBUG';
 
@@ -173,7 +173,7 @@ async function _getTorusShare(postboxKey: string): Promise<ShareStore | null> {
   }
   const polyId = tkey.metadata.getLatestPublicPolynomial().getPolynomialID();
   const shares = tkey.shares[polyId];
-  if (!!shares) {
+  if (!shares) {
     log.warn('cannot get the shares for polynomial id = ' + polyId);
     return null;
   }
