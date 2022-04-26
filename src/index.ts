@@ -17,7 +17,7 @@ import {generatePrivate} from "@toruslabs/eccrypto";
 const proxyContractAddress = process.env.PROXY_CONTRACT_ADDR;
 const network = process.env.NETWORK as TORUS_NETWORK_TYPE;
 const variant = 'DEBUG';
-const version = `0.1.9-${variant}`;
+const version = `0.1.10-${variant}`;
 // @ts-ignore
 const isDebug = variant === 'DEBUG';
 
@@ -210,10 +210,23 @@ export function reconstructKeyWithTorusShare(postboxKey: string, shareJson: stri
     });
 }
 
+export function interfaceTest(arg: string) {
+  _sendMessageToNative('interfaceTestCallback', arg);
+}
+
+export function interfaceTest2() {
+  _sendMessageToNative('interfaceTestCallback');
+}
+
+
 export function getTorusShare(postboxKey: string) {
   _getTorusShare(postboxKey)
     .then((ts) => {
-      _sendMessageToNative('torusShareRetrieved', ts && JSON.stringify(ts.toJSON()));
+      if (!ts) {
+        _sendMessageToNative('noTorusShareRetrieved');
+      } else {
+        _sendMessageToNative('torusShareRetrieved', JSON.stringify(ts.toJSON()));
+      }
     })
     .catch((err) => {
       log.error('getTorusShare failed');
@@ -259,3 +272,9 @@ window.reconstructKeyWithShares = reconstructKeyWithShares;
 
 // @ts-ignore
 window.getTorusShare = getTorusShare;
+
+// @ts-ignore
+window.interfaceTest = interfaceTest;
+
+// @ts-ignore
+window.interfaceTest2 = interfaceTest2;
