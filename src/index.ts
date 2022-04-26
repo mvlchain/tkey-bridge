@@ -17,7 +17,7 @@ import {generatePrivate} from "@toruslabs/eccrypto";
 const proxyContractAddress = process.env.PROXY_CONTRACT_ADDR;
 const network = process.env.NETWORK as TORUS_NETWORK_TYPE;
 const variant = 'DEBUG';
-const version = `0.1.8-${variant}`;
+const version = `0.1.9-${variant}`;
 // @ts-ignore
 const isDebug = variant === 'DEBUG';
 
@@ -43,21 +43,22 @@ async function _splitKey(postboxKey: string, privateKey: BN): Promise<{ torusSha
   const tkey = new ThresholdKey({serviceProvider, storageLayer});
   const initResult = await tkey.initialize({importKey: privateKey});
   const pubkey = getPubKeyPoint(privateKey);
+
   if (!(pubkey.x.eq(initResult.pubKey.x) && pubkey.y.eq(initResult.pubKey.y))) {
     log.debug('initResult.pubKey='+JSON.stringify(initResult.pubKey.toJSON()));
     log.debug('pubkey='+JSON.stringify(pubkey.toJSON()));
-    return _forceInitAndSplit(tkey, privateKey);
+    throw new Error("different private key exist");
   } else if (initResult.requiredShares > 0) { // we need more shares, but we don't have it now!
     // we reset with key again
     log.debug('initResult.requiredShares =' + initResult.requiredShares);
-    return _forceInitAndSplit(tkey, privateKey);
+    throw new Error("not enough shares");
   }
 
   let polyId = tkey.metadata.getLatestPublicPolynomial().polynomialId;
   log.debug('polyId=' + polyId);
 
   if (tkey.getCurrentShareIndexes().length < 3) {
-    log.error("share index length < 3, length=" + tkey.getCurrentShareIndexes().length);
+    log.info("share index length < 3, length=" + tkey.getCurrentShareIndexes().length);
     const shareResults = await tkey.generateNewShare();
     polyId = tkey.metadata.getLatestPublicPolynomial().polynomialId;
     log.debug('new polyId=' + polyId);
