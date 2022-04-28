@@ -7,6 +7,7 @@ import path from "path";
 import ServiceProviderBase from "@tkey/service-provider-base"
 import log from 'loglevel';
 import {generatePrivate} from "@toruslabs/eccrypto";
+import {KEY_NOT_FOUND} from "@tkey/common-types";
 
 /*
 1. split given key
@@ -17,7 +18,7 @@ import {generatePrivate} from "@toruslabs/eccrypto";
 const proxyContractAddress = process.env.PROXY_CONTRACT_ADDR;
 const network = process.env.NETWORK as TORUS_NETWORK_TYPE;
 const variant = 'DEBUG';
-const version = `0.1.10-${variant}`;
+const version = `0.1.11-${variant}`;
 // @ts-ignore
 const isDebug = variant === 'DEBUG';
 
@@ -186,6 +187,15 @@ async function _getTorusShare(postboxKey: string): Promise<ShareStore | null> {
   return shares['1'];
 }
 
+async function _deleteTorusShare(postboxKey: string) {
+  const serviceProvider = getServiceProvider(postboxKey);
+  await storageLayer.setMetadataStream({
+    input: [{ message: KEY_NOT_FOUND, dateAdded: Date.now() }],
+    privKey: [new BN(postboxKey, 'hex')] ,
+    serviceProvider: serviceProvider,
+  });
+}
+
 export function reconstructKeyWithShares(shareJson: string, shareJson2: string) {
   try {
     const share1 = ShareStore.fromJSON(JSON.parse(shareJson));
@@ -235,6 +245,18 @@ export function getTorusShare(postboxKey: string) {
     });
 }
 
+export function deleteTorusShare(postboxKey: string) {
+  _deleteTorusShare(postboxKey)
+    .then(() => {
+      _sendMessageToNative('torusShareDeleted');
+    })
+    .catch((err) => {
+      log.error('deleteTorusShare failed');
+      log.error(JSON.stringify(err));
+      _sendMessageToNative('torusShareDeleteFailed', err.message);
+    });
+}
+
 function _sendMessageToNative(command: string, params?: any) {
   // iOS
   // @ts-ignore
@@ -273,8 +295,13 @@ window.reconstructKeyWithShares = reconstructKeyWithShares;
 // @ts-ignore
 window.getTorusShare = getTorusShare;
 
-// @ts-ignore
-window.interfaceTest = interfaceTest;
+if (isDebug) {
+  // @ts-ignore
+  window.interfaceTest = interfaceTest;
 
 // @ts-ignore
-window.interfaceTest2 = interfaceTest2;
+  window.interfaceTest2 = interfaceTest2;
+
+// @ts-ignore
+  window.deleteTorusShare = deleteTorusShare;
+}
