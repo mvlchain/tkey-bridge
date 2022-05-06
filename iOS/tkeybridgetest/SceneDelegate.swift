@@ -6,7 +6,7 @@
 //
 
 import UIKit
-import TorusSwiftDirectSDK
+import CustomAuth
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
@@ -22,7 +22,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
               let urlToOpen = userActivity.webpageURL else {
             return
         }
-        TorusSwiftDirectSDK.handle(url: urlToOpen)
+        CustomAuth.handle(url: urlToOpen)
     }
 
     // Hanlde Deep linkings
@@ -30,7 +30,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let url = URLContexts.first?.url else {
             return
         }
-        TorusSwiftDirectSDK.handle(url: url)
+        CustomAuth.handle(url: url)
     }
 }
 

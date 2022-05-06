@@ -5,6 +5,6 @@ target 'tkeybridgetest' do
   use_frameworks!
 
   # Pods for tkeybridgetest
-  pod 'Torus-directSDK', '~> 1.1.0'
+  pod 'CustomAuth', '~> 2.1.0'
 
 end
