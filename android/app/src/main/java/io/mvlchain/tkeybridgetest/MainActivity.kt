@@ -27,6 +27,11 @@ class MyWebViewClient(private val mContext: Context): WebViewClient() {
             super.shouldInterceptRequest(view, url)
         }
     }
+
+    override fun onPageFinished(view: WebView?, url: String?) {
+        super.onPageFinished(view, url)
+        Log.i("webview", "$url load finished")
+    }
 }
 
 class MainActivity : AppCompatActivity() {
@@ -48,6 +53,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        WebView.setWebContentsDebuggingEnabled(true)
+
         webView = findViewById(R.id.webview)
         webView.settings.allowContentAccess = true
         webView.settings.allowFileAccess = true
@@ -64,30 +71,38 @@ class MainActivity : AppCompatActivity() {
         webView.addJavascriptInterface(this, "tkeybridge")
         webView.loadUrl("file:///android_asset/index.html")
 
+        this.postboxKey = "60439a73524cd858109e7193aba01731306e37e96dabc71e78f873cb324d0b7d";
+        // random gen private key
+        val privateKey = Hex.toHexString(Random.Default.nextBytes(32))
+        Log.i(this.javaClass.simpleName, "generated private key = $privateKey")
+        // 5 sec after
+        val handler = Handler()
+        handler.postDelayed({
+            webView.loadUrl("javascript:window.splitKey('${this.postboxKey}', '$privateKey')")
+        }, 20000)
+
+
         // direct sdk init
         val directSdkArgs = DirectSdkArgs("https://staging.mvlclutch.io/customauth_redirect.html", TorusNetwork.TESTNET, "clutchwallet://io.mvlchain.customauthandroid/redirect")
         torusSdk = TorusDirectSdk(directSdkArgs, this)
 
-        val loginResultCf = torusSdk.triggerLogin(SubVerifierDetails(LoginType.GOOGLE, "clutch-google-testnet", "354250895959-dneacv3fol73d6a6lf789mcjo2jjpbms.apps.googleusercontent.com")
-            .setPreferCustomTabs(true)
-            .setAllowedBrowsers(allowedBrowsers))
-
-        // random gen private key
-        val privateKey = Hex.toHexString(Random.Default.nextBytes(32))
-        Log.i(this.javaClass.simpleName, "generated private key = $privateKey")
-
-        loginResultCf.whenComplete { loginResponse, error ->
-            if (error != null) {
-                Log.e(this.javaClass.simpleName, error.message)
-            } else {
-                this.postboxKey = loginResponse.privateKey
-                this.loginId = loginResponse.userInfo.email
-                Log.i("tkey", "try to call splitKey")
-                Handler(Looper.getMainLooper()).post {
-                    webView.loadUrl("javascript:window.splitKey('${this.postboxKey}', '$privateKey')")
-                }
-            }
-        }
+//        val loginResultCf = torusSdk.triggerLogin(SubVerifierDetails(LoginType.GOOGLE, "clutch-google-testnet", "354250895959-dneacv3fol73d6a6lf789mcjo2jjpbms.apps.googleusercontent.com")
+//            .setPreferCustomTabs(true)
+//            .setAllowedBrowsers(allowedBrowsers))
+//
+//        loginResultCf.whenComplete { loginResponse, error ->
+//            if (error != null) {
+//                Log.e(this.javaClass.simpleName, error.message)
+//            } else {
+//                this.postboxKey = loginResponse.privateKey
+//                Log.i("tkey", "postboxKey = ${postboxKey}")
+//                this.loginId = loginResponse.userInfo.email
+//                Log.i("tkey", "try to call splitKey")
+//                Handler(Looper.getMainLooper()).post {
+//                    webView.loadUrl("javascript:window.splitKey('${this.postboxKey}', '$privateKey')")
+//                }
+//            }
+//        }
     }
 
     @JavascriptInterface
@@ -101,20 +116,26 @@ class MainActivity : AppCompatActivity() {
         dsJson = shares.getString("ds").toString()
         Log.i("tkey", "ss = $ssJson")
         Log.i("tkey", "ds = $dsJson")
-        Handler(Looper.getMainLooper()).post {
-            webView.loadUrl("javascript:window.saveTorusShare('${this.postboxKey}', '$torusShare', '${this.loginId}')")
-        }
-    }
+//        Handler(Looper.getMainLooper()).post {
+//            webView.loadUrl("javascript:window.saveTorusShare('${this.postboxKey}', '$torusShare', '${this.loginId}')")
+//        }
 
-    @JavascriptInterface
-    fun torusShareSaved() {
-        Log.i("tkey", "torus share saved")
 
         Handler(Looper.getMainLooper()).post {
             // try to restore share
             webView.loadUrl("javascript:window.reconstructKeyWithTorusShare('${this.postboxKey}','${this.ssJson}')")
         }
     }
+
+//    @JavascriptInterface
+//    fun torusShareSaved() {
+//        Log.i("tkey", "torus share saved")
+//
+//        Handler(Looper.getMainLooper()).post {
+//            // try to restore share
+//            webView.loadUrl("javascript:window.reconstructKeyWithTorusShare('${this.postboxKey}','${this.ssJson}')")
+//        }
+//    }
 
     @JavascriptInterface
     fun privateKeyReconstructed(pkey: String) {
