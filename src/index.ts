@@ -18,7 +18,7 @@ import {KEY_NOT_FOUND} from "@tkey/common-types";
 const proxyContractAddress = process.env.PROXY_CONTRACT_ADDR;
 const network = process.env.NETWORK as TORUS_NETWORK_TYPE;
 const variant = 'DEBUG';
-const version = `0.1.11-${variant}`;
+const version = `0.1.12-${variant}`;
 // @ts-ignore
 const isDebug = variant === 'DEBUG';
 

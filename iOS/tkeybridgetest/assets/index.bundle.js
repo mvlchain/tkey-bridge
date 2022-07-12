@@ -52860,7 +52860,7 @@ var ServiceProviderBase = /*#__PURE__*/function () {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "splitKey", function() { return splitKey; });
+/* WEBPACK VAR INJECTION */(function(process) {/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "splitKey", function() { return splitKey; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "reconstructKeyWithShares", function() { return reconstructKeyWithShares; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "reconstructKeyWithTorusShare", function() { return reconstructKeyWithTorusShare; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "interfaceTest", function() { return interfaceTest; });
@@ -52929,10 +52929,10 @@ var __generator = (undefined && undefined.__generator) || function (thisArg, bod
 2. save provider share to torus network
 3. reconstruct key
  */
-var proxyContractAddress = "0x4023d2a0D330bF11426B12C6144Cfb96B7fa6183";
-var network = "testnet";
+var proxyContractAddress = process.env.PROXY_CONTRACT_ADDR;
+var network = process.env.NETWORK;
 var variant = 'DEBUG';
-var version = "0.1.11-" + variant;
+var version = "0.1.12-" + variant;
 // @ts-ignore
 var isDebug = variant === 'DEBUG';
 loglevel__WEBPACK_IMPORTED_MODULE_6___default.a.setLevel(isDebug ? 'trace' : 'info', false);
@@ -53174,7 +53174,7 @@ function reconstructKeyWithTorusShare(postboxKey, shareJson) {
     _reconstructKeyWithTorusShare(postboxKey, _tkey_common_types__WEBPACK_IMPORTED_MODULE_3__[/* ShareStore */ "j"].fromJSON(JSON.parse(shareJson)))
         .then(function (_a) {
         var privateKey = _a.privateKey, share = _a.share;
-        _sendMessageToNative("privateKeyReconstructedWithShares", { privateKey: privateKey.toString('hex'), share: JSON.stringify(share.toJSON()) });
+        _sendMessageToNative("privateKeyReconstructedWithShares", { privateKey: privateKey.toString('hex').padStart(64, '0'), share: JSON.stringify(share.toJSON()) });
     })
         .catch(function (err) {
         loglevel__WEBPACK_IMPORTED_MODULE_6___default.a.error(err.message);
@@ -53259,6 +53259,7 @@ if (isDebug) {
     window.deleteTorusShare = deleteTorusShare;
 }
 
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(7)))
 
 /***/ }),
 /* 145 */
