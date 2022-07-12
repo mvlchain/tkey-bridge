@@ -212,7 +212,7 @@ export function reconstructKeyWithTorusShare(postboxKey: string, shareJson: stri
   log.debug('postbox key = ' + postboxKey);
   _reconstructKeyWithTorusShare(postboxKey, ShareStore.fromJSON(JSON.parse(shareJson)))
     .then(({privateKey, share}) => {
-      _sendMessageToNative("privateKeyReconstructedWithShares", {privateKey: privateKey.toString('hex'), share: JSON.stringify(share.toJSON())} );
+      _sendMessageToNative("privateKeyReconstructedWithShares", {privateKey: privateKey.toString('hex').padStart(64, '0'), share: JSON.stringify(share.toJSON())} );
     })
     .catch((err) => {
       log.error(err.message);
