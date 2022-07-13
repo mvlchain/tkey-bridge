@@ -18,7 +18,7 @@ import {KEY_NOT_FOUND} from "@tkey/common-types";
 const proxyContractAddress = process.env.PROXY_CONTRACT_ADDR;
 const network = process.env.NETWORK as TORUS_NETWORK_TYPE;
 const variant = 'DEBUG';
-const version = `0.1.11-${variant}`;
+const version = `0.1.12-${variant}`;
 // @ts-ignore
 const isDebug = variant === 'DEBUG';
 
@@ -212,7 +212,7 @@ export function reconstructKeyWithTorusShare(postboxKey: string, shareJson: stri
   log.debug('postbox key = ' + postboxKey);
   _reconstructKeyWithTorusShare(postboxKey, ShareStore.fromJSON(JSON.parse(shareJson)))
     .then(({privateKey, share}) => {
-      _sendMessageToNative("privateKeyReconstructedWithShares", {privateKey: privateKey.toString('hex'), share: JSON.stringify(share.toJSON())} );
+      _sendMessageToNative("privateKeyReconstructedWithShares", {privateKey: privateKey.toString('hex').padStart(64, '0'), share: JSON.stringify(share.toJSON())} );
     })
     .catch((err) => {
       log.error(err.message);
