@@ -52860,7 +52860,7 @@ var ServiceProviderBase = /*#__PURE__*/function () {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* WEBPACK VAR INJECTION */(function(process) {/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "splitKey", function() { return splitKey; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "splitKey", function() { return splitKey; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "reconstructKeyWithShares", function() { return reconstructKeyWithShares; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "reconstructKeyWithTorusShare", function() { return reconstructKeyWithTorusShare; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "interfaceTest", function() { return interfaceTest; });
@@ -52929,9 +52929,9 @@ var __generator = (undefined && undefined.__generator) || function (thisArg, bod
 2. save provider share to torus network
 3. reconstruct key
  */
-var proxyContractAddress = process.env.PROXY_CONTRACT_ADDR;
-var network = process.env.NETWORK;
-var variant = 'DEBUG';
+var proxyContractAddress = "0x4023d2a0D330bF11426B12C6144Cfb96B7fa6183";
+var network = "testnet";
+var variant = 'RELEASE';
 var version = "0.1.12-" + variant;
 // @ts-ignore
 var isDebug = variant === 'DEBUG';
@@ -53259,7 +53259,6 @@ if (isDebug) {
     window.deleteTorusShare = deleteTorusShare;
 }
 
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(7)))
 
 /***/ }),
 /* 145 */
