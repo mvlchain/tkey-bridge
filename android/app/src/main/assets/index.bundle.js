@@ -52929,10 +52929,8 @@ var __generator = (undefined && undefined.__generator) || function (thisArg, bod
 2. save provider share to torus network
 3. reconstruct key
  */
-var proxyContractAddress = "0x4023d2a0D330bF11426B12C6144Cfb96B7fa6183";
-var network = "testnet";
 var variant = 'RELEASE';
-var version = "0.1.12-" + variant;
+var version = "0.1.13-" + variant;
 // @ts-ignore
 var isDebug = variant === 'DEBUG';
 loglevel__WEBPACK_IMPORTED_MODULE_6___default.a.setLevel(isDebug ? 'trace' : 'info', false);
@@ -52944,8 +52942,6 @@ var storageLayer = new _tkey_storage_layer_torus__WEBPACK_IMPORTED_MODULE_1__[/*
     enableLogging: true
 });
 loglevel__WEBPACK_IMPORTED_MODULE_6___default.a.info("tkey-bridge version: " + version);
-loglevel__WEBPACK_IMPORTED_MODULE_6___default.a.info("proxyContractAddress", proxyContractAddress);
-loglevel__WEBPACK_IMPORTED_MODULE_6___default.a.info("network", network);
 loglevel__WEBPACK_IMPORTED_MODULE_6___default.a.info("directWebBaseUrl", directWebBaseUrl);
 function _splitKey(postboxKey, privateKey) {
     return __awaiter(this, void 0, void 0, function () {
@@ -53250,13 +53246,13 @@ window.reconstructKeyWithTorusShare = reconstructKeyWithTorusShare;
 window.reconstructKeyWithShares = reconstructKeyWithShares;
 // @ts-ignore
 window.getTorusShare = getTorusShare;
+// @ts-ignore
+window.deleteTorusShare = deleteTorusShare;
 if (isDebug) {
     // @ts-ignore
     window.interfaceTest = interfaceTest;
     // @ts-ignore
     window.interfaceTest2 = interfaceTest2;
-    // @ts-ignore
-    window.deleteTorusShare = deleteTorusShare;
 }
 
 
