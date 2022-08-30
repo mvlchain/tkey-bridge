@@ -1,8 +1,7 @@
 import ThresholdKey, {CoreError, lagrangeInterpolation} from "@tkey/core";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
 import BN from "bn.js"
-import {getPubKeyPoint, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap} from "@tkey/common-types";
-import {TORUS_NETWORK_TYPE} from "@toruslabs/torus-direct-web-sdk";
+import {getPubKeyPoint, ShareStore, ShareStoreMap} from "@tkey/common-types";
 import path from "path";
 import ServiceProviderBase from "@tkey/service-provider-base"
 import log from 'loglevel';
@@ -15,10 +14,8 @@ import {KEY_NOT_FOUND} from "@tkey/common-types";
 3. reconstruct key
  */
 
-const proxyContractAddress = process.env.PROXY_CONTRACT_ADDR;
-const network = process.env.NETWORK as TORUS_NETWORK_TYPE;
 const variant = 'RELEASE';
-const version = `0.1.12-${variant}`;
+const version = `0.1.13-${variant}`;
 // @ts-ignore
 const isDebug = variant === 'DEBUG';
 
@@ -34,8 +31,6 @@ const storageLayer = new TorusStorageLayer({
 });
 
 log.info("tkey-bridge version: " + version);
-log.info("proxyContractAddress", proxyContractAddress)
-log.info("network", network)
 log.info("directWebBaseUrl", directWebBaseUrl);
 
 async function _splitKey(postboxKey: string, privateKey: BN): Promise<{ torusShare: ShareStore, deviceShare: ShareStore, serverShare: ShareStore }> {
@@ -295,13 +290,13 @@ window.reconstructKeyWithShares = reconstructKeyWithShares;
 // @ts-ignore
 window.getTorusShare = getTorusShare;
 
+// @ts-ignore
+window.deleteTorusShare = deleteTorusShare;
+
 if (isDebug) {
   // @ts-ignore
   window.interfaceTest = interfaceTest;
 
-// @ts-ignore
+  // @ts-ignore
   window.interfaceTest2 = interfaceTest2;
-
-// @ts-ignore
-  window.deleteTorusShare = deleteTorusShare;
 }
